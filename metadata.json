@@ -1,0 +1,6 @@
+{
+  "name": "Invoice Generator",
+  "description": "A simple, clean, single-page invoice generator web app created with HTML, CSS, and vanilla JavaScript that persists offline and exports to PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

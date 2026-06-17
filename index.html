@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Invoice Generator</title>
+  
+  <!-- jsPDF Library loaded via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    /* Sleek Interface design theme - Minimalist, modern grey background, white centered card, elegant typography */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background-color: #f9fafb;
+      color: #000000;
+      margin: 0;
+      padding: 40px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    
+    .app-container {
+      width: 100%;
+      max-width: 900px;
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      padding: 40px;
+      box-sizing: border-box;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+    }
+
+    /* Header Styling */
+    header {
+      border-bottom: 2px solid #000000;
+      padding-bottom: 16px;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      text-transform: uppercase;
+      margin: 0 0 4px 0;
+    }
+    header p {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      margin: 0;
+    }
+
+    /* Section Typography & Layout */
+    section {
+      margin-bottom: 32px;
+    }
+    section h2 {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #9ca3af;
+      border: none;
+      padding-bottom: 0;
+      margin: 0 0 16px 0;
+    }
+    
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    @media (min-width: 600px) {
+      .form-row {
+        flex-direction: row;
+      }
+      .form-row > .form-group {
+        flex: 1;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+    .form-control {
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 500;
+      color: #000000;
+      background-color: transparent;
+      border: none;
+      border-bottom: 1px solid #d1d5db;
+      padding: 8px 0;
+      box-sizing: border-box;
+      border-radius: 0;
+      transition: border-color 0.15s ease-in-out;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: #000000;
+    }
+
+    /* Items Table Styling */
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 16px;
+      border: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #ffffff;
+      min-width: 600px;
+    }
+    th, td {
+      border: none;
+      padding: 12px 10px;
+      vertical-align: middle;
+      font-size: 13px;
+    }
+    th {
+      border-bottom: 2px solid #000000;
+      background-color: transparent;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: #9ca3af;
+      padding-bottom: 8px;
+    }
+    td {
+      border-bottom: 1px solid #f3f4f6;
+    }
+    
+    td input {
+      width: 100%;
+      box-sizing: border-box;
+      border: none;
+      background-color: #f9fafb;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      border-radius: 4px;
+      transition: background-color 0.15s ease-in-out;
+    }
+    td input:focus {
+      outline: none;
+      background-color: #f3f4f6;
+    }
+    
+    .col-qty, .col-price {
+      text-align: right;
+    }
+    .col-total {
+      text-align: right;
+      font-weight: 500;
+      padding-right: 15px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    
+    /* Dedicated column widths */
+    .w-name { width: 45%; }
+    .w-qty { width: 12%; }
+    .w-price { width: 18%; }
+    .w-total { width: 18%; }
+    .w-action { width: 7%; text-align: center; }
+
+    /* Button Styling */
+    .btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      transition: all 0.15s ease-in-out;
+      border-radius: 0;
+    }
+    
+    #btn-add-item {
+      color: #2563eb;
+      background: transparent;
+      border: none;
+      padding: 8px 12px;
+      margin-top: 8px;
+    }
+    #btn-add-item:hover {
+      color: #1d4ed8;
+      text-decoration: underline;
+    }
+    
+    .btn-dark {
+      background-color: #000000;
+      color: #ffffff;
+      border: none;
+      padding: 16px 32px;
+      height: auto;
+    }
+    .btn-dark:hover {
+      background-color: #1f2937;
+    }
+    
+    .btn-danger {
+      background-color: transparent;
+      color: #9ca3af;
+      border: 1px solid #d1d5db;
+      padding: 16px 32px;
+      height: auto;
+    }
+    .btn-danger:hover {
+      color: #000000;
+      border-color: #000000;
+    }
+    
+    .btn-delete-row {
+      border: none;
+      background: none;
+      color: #9cb3af;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      transition: color 0.15s ease-in-out;
+    }
+    .btn-delete-row:hover {
+      color: #ef4444;
+    }
+
+    /* Grand Total Section */
+    .grand-total-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      border-top: 1px solid #f3f4f6;
+      padding-top: 32px;
+      margin-bottom: 32px;
+    }
+    .grand-total-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+    .grand-total-value {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Footer buttons */
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-top: 1px solid #f3f4f6;
+      padding-top: 32px;
+    }
+    @media (min-width: 600px) {
+      .action-buttons {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 16px;
+      }
+      .action-buttons .btn {
+        min-width: 200px;
+      }
+    }
+
+    /* Non-intrusive alert banner */
+    .alert-banner {
+      display: none;
+      background-color: #fef2f2;
+      border: 1px solid #fee2e2;
+      color: #b91c1c;
+      font-size: 13px;
+      padding: 16px;
+      margin-bottom: 32px;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <header>
+      <h1>Simple Invoice Generator</h1>
+      <p>Create and download invoices instantly</p>
+    </header>
+
+    <!-- VALIDATION ALERT BANNER -->
+    <div id="validation-alert" class="alert-banner"></div>
+
+    <!-- BUSINESS DETAILS SECTION -->
+    <section>
+      <h2>Business Details</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="business-name">Business Name *</label>
+          <input type="text" id="business-name" class="form-control" placeholder="Your Business or Full Name" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="business-phone">Phone Number</label>
+          <input type="tel" id="business-phone" class="form-control" placeholder="123-456-7890" autocomplete="off">
+        </div>
+      </div>
+    </section>
+
+    <!-- CLIENT DETAILS SECTION -->
+    <section>
+      <h2>Client Details</h2>
+      <div class="form-group">
+        <label for="client-name">Client Name *</label>
+        <input type="text" id="client-name" class="form-control" placeholder="Client Company or Client Name" autocomplete="off">
+      </div>
+    </section>
+
+    <!-- ITEMS SECTION -->
+    <section>
+      <h2>Items</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th class="w-name" style="text-align: left;">Item Name</th>
+              <th class="w-qty" style="text-align: right;">Quantity</th>
+              <th class="w-price" style="text-align: right;">Price</th>
+              <th class="w-total" style="text-align: right;">Total</th>
+              <th class="w-action"></th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody">
+            <!-- Table rows are dynamically attached by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <button type="button" id="btn-add-item" class="btn">+ Add Item</button>
+      </div>
+    </section>
+
+    <!-- TOTAL SECTION -->
+    <div class="grand-total-container">
+      <span class="grand-total-label">Grand Total :</span>
+      <span class="grand-total-value" id="grand-total-display">$0.00</span>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="action-buttons">
+      <button type="button" id="btn-clear-all" class="btn btn-danger">Clear All</button>
+      <button type="button" id="btn-generate-pdf" class="btn btn-dark">Generate Invoice PDF</button>
+    </div>
+
+  </div>
+
+  <script>
+    // Grab UI elements
+    const inputBusinessName = document.getElementById('business-name');
+    const inputBusinessPhone = document.getElementById('business-phone');
+    const inputClientName = document.getElementById('client-name');
+    const itemsTbody = document.getElementById('items-tbody');
+    const btnAddItem = document.getElementById('btn-add-item');
+    const btnGeneratePdf = document.getElementById('btn-generate-pdf');
+    const btnClearAll = document.getElementById('btn-clear-all');
+    const grandTotalDisplay = document.getElementById('grand-total-display');
+    const validationAlert = document.getElementById('validation-alert');
+
+    // Simple HTML escape helper
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Build standard items array from the DOM
+    function getItemsFromDOM() {
+      const rows = itemsTbody.querySelectorAll('tr');
+      const items = [];
+      rows.forEach(row => {
+        const nameInput = row.querySelector('.item-input-name');
+        const qtyInput = row.querySelector('.item-input-qty');
+        const priceInput = row.querySelector('.item-input-price');
+        if (nameInput && qtyInput && priceInput) {
+          items.push({
+            name: nameInput.value,
+            qty: parseFloat(qtyInput.value) || 0,
+            price: parseFloat(priceInput.value) || 0
+          });
+        }
+      });
+      return items;
+    }
+
+    // Calculate details and save to localStorage
+    function updateAndSave() {
+      let grandTotal = 0;
+      const rows = itemsTbody.querySelectorAll('tr');
+      const items = [];
+
+      rows.forEach(row => {
+        const nameVal = row.querySelector('.item-input-name').value;
+        
+        // Handle values gracefully
+        const rawQty = row.querySelector('.item-input-qty').value;
+        const qtyVal = rawQty === '' ? 0 : (parseFloat(rawQty) || 0);
+
+        const rawPrice = row.querySelector('.item-input-price').value;
+        const priceVal = rawPrice === '' ? 0 : (parseFloat(rawPrice) || 0);
+
+        const rowTotal = qtyVal * priceVal;
+        grandTotal += rowTotal;
+
+        // Render row total formatted to two decimals
+        const totalCell = row.querySelector('.col-total-val');
+        if (totalCell) {
+          totalCell.textContent = '$' + rowTotal.toFixed(2);
+        }
+
+        items.push({
+          name: nameVal,
+          qty: qtyVal,
+          price: priceVal
+        });
+      });
+
+      // Update grand total on interface
+      grandTotalDisplay.textContent = '$' + grandTotal.toFixed(2);
+
+      // Save fields and arrays directly to browser temporary store
+      localStorage.setItem('invoice_business_name', inputBusinessName.value);
+      localStorage.setItem('invoice_business_phone', inputBusinessPhone.value);
+      localStorage.setItem('invoice_client_name', inputClientName.value);
+      localStorage.setItem('invoice_items', JSON.stringify(items));
+    }
+
+    // Dynamically spawn structured table rows with automatic listeners
+    function createRowElement(name = '', qty = 1, price = 0) {
+      const tr = document.createElement('tr');
+      
+      // Clean inputs, styling aligned with minimal guidelines
+      tr.innerHTML = `
+        <td class="w-name">
+          <input type="text" class="item-input-name" placeholder="Describe item or service..." value="${escapeHtml(name)}" autocomplete="off">
+        </td>
+        <td class="w-qty">
+          <input type="number" class="col-qty item-input-qty" placeholder="0" min="0" step="any" value="${qty}" autocomplete="off">
+        </td>
+        <td class="w-price">
+          <input type="number" class="col-price item-input-price" placeholder="0.00" min="0" step="0.01" value="${price === 0 ? '' : price.toFixed(2)}" autocomplete="off">
+        </td>
+        <td class="col-total col-total-val">$0.00</td>
+        <td class="w-action">
+          <button type="button" class="btn-delete-row" title="Delete Row">&times;</button>
+        </td>
+      `;
+
+      // Bind 'input' event to instantly autocalculate & persist elements
+      tr.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateAndSave);
+      });
+
+      // Handle row deletion
+      tr.querySelector('.btn-delete-row').addEventListener('click', () => {
+        tr.remove();
+        updateAndSave();
+      });
+
+      return tr;
+    }
+
+    // Form validation before PDF generation
+    function validateForm() {
+      const errors = [];
+      const bName = inputBusinessName.value.trim();
+      const cName = inputClientName.value.trim();
+      const rowCount = itemsTbody.querySelectorAll('tr').length;
+
+      if (!bName) {
+        errors.push("Business Name is required.");
+      }
+      if (!cName) {
+        errors.push("Client Name is required.");
+      }
+      if (rowCount === 0) {
+        errors.push("Please add at least one item row to the invoice.");
+      }
+
+      if (errors.length > 0) {
+        let errorHtml = '<strong>Please correct the following errors to generate the PDF:</strong>';
+        errorHtml += '<ul style="margin: 5px 0 0 15px; padding-left: 5px;">';
+        errors.forEach(err => {
+          errorHtml += '<li>' + escapeHtml(err) + '</li>';
+        });
+        errorHtml += '</ul>';
+        validationAlert.innerHTML = errorHtml;
+        validationAlert.style.display = 'block';
+        
+        // Scroll smoothly to warning banner
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return false;
+      }
+
+      validationAlert.style.display = 'none';
+      return true;
+    }
+
+    // Restore stored states cleanly or default initial state
+    function loadState() {
+      const savedBusinessName = localStorage.getItem('invoice_business_name') || '';
+      const savedBusinessPhone = localStorage.getItem('invoice_business_phone') || '';
+      const savedClientName = localStorage.getItem('invoice_client_name') || '';
+
+      inputBusinessName.value = savedBusinessName;
+      inputBusinessPhone.value = savedBusinessPhone;
+      inputClientName.value = savedClientName;
+
+      itemsTbody.innerHTML = '';
+
+      let savedItems = null;
+      try {
+        const rawItems = localStorage.getItem('invoice_items');
+        if (rawItems) {
+          savedItems = JSON.parse(rawItems);
+        }
+      } catch (e) {
+        console.error("Local storage sync error", e);
+      }
+
+      if (savedItems && Array.isArray(savedItems) && savedItems.length > 0) {
+        savedItems.forEach(item => {
+          const name = item.name || '';
+          const qty = item.qty !== undefined ? parseFloat(item.qty) : 1;
+          const price = item.price !== undefined ? parseFloat(item.price) : 0;
+          itemsTbody.appendChild(createRowElement(name, qty, price));
+        });
+      } else {
+        // Enforce exactly one default empty row
+        itemsTbody.appendChild(createRowElement('', 1, 0));
+      }
+
+      updateAndSave();
+    }
+
+    // Clear state inputs and variables
+    function clearAll() {
+      localStorage.removeItem('invoice_business_name');
+      localStorage.removeItem('invoice_business_phone');
+      localStorage.removeItem('invoice_client_name');
+      localStorage.removeItem('invoice_items');
+
+      inputBusinessName.value = '';
+      inputBusinessPhone.value = '';
+      inputClientName.value = '';
+
+      itemsTbody.innerHTML = '';
+      itemsTbody.appendChild(createRowElement('', 1, 0));
+
+      validationAlert.style.display = 'none';
+      updateAndSave();
+    }
+
+    // Handle PDF generation via jsPDF
+    function generatePDF() {
+      if (!validateForm()) return;
+
+      const businessName = inputBusinessName.value.trim();
+      const businessPhone = inputBusinessPhone.value.trim();
+      const clientName = inputClientName.value.trim();
+      const items = getItemsFromDOM();
+
+      const { jsPDF } = window.jspdf;
+      // Initialize A4 PDF
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      let y = 30; // Left margin standard is 20mm, right boundary is 190mm
+
+      // 1. INVOICE TITLE
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(24);
+      doc.setTextColor(0, 0, 0);
+      doc.text("INVOICE", 190, y, { align: "right" });
+
+      // 2. BUSINESS DETAILS (Sender)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text(businessName, 20, y);
+
+      if (businessPhone) {
+        y += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Phone: " + businessPhone, 20, y);
+      }
+
+      // 3. SEPARATOR LINE
+      y += 12;
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.line(20, y, 190, y);
+
+      // 4. CLIENT DETAILS (Recipient)
+      y += 12;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
+      doc.text("BILLED TO:", 20, y);
+
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(clientName, 20, y);
+
+      // 5. TABLE HEADERS
+      y += 18;
+      // Top line
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
+      doc.line(20, y, 190, y);
+
+      y += 5;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.text("ITEM DESCRIPTION", 20, y);
+      doc.text("QTY", 125, y, { align: "right" });
+      doc.text("UNIT PRICE", 155, y, { align: "right" });
+      doc.text("AMOUNT", 190, y, { align: "right" });
+
+      y += 3;
+      // Header dividing line
+      doc.line(20, y, 190, y);
+      
+      // 6. TABLE ROWS
+      y += 8;
+      let grandTotal = 0;
+
+      items.forEach(item => {
+        const itemTotal = item.qty * item.price;
+        grandTotal += itemTotal;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+
+        // Safe truncation of names to avoid column overlap
+        const displayName = item.name.trim() === '' ? "Unnamed Item/Service" : item.name;
+        const truncatedName = displayName.length > 50 ? displayName.substring(0, 47) + "..." : displayName;
+
+        // Print item description
+        doc.text(truncatedName, 20, y);
+        // Print columns
+        doc.text(String(item.qty), 125, y, { align: "right" });
+        doc.text("$" + Number(item.price).toFixed(2), 155, y, { align: "right" });
+        doc.text("$" + itemTotal.toFixed(2), 190, y, { align: "right" });
+
+        // Draw dotted/thin grey divider line under row
+        y += 3;
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.1);
+        doc.line(20, y, 190, y);
+
+        y += 8;
+      });
+
+      // 7. TOTAL SECTION
+      y += 2;
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.4);
+      doc.line(20, y, 190, y);
+
+      y += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text("GRAND TOTAL:", 145, y, { align: "right" });
+      
+      doc.setFontSize(13);
+      doc.text("$" + grandTotal.toFixed(2), 190, y, { align: "right" });
+
+      // 8. ACCENTS / FOOTER
+      y += 20;
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
+      doc.text("Thank you for your business!", 105, y, { align: "center" });
+
+      // Trigger automatic save
+      doc.save("invoice.pdf");
+    }
+
+    // Set up Global Event Observers
+    inputBusinessName.addEventListener('input', updateAndSave);
+    inputBusinessPhone.addEventListener('input', updateAndSave);
+    inputClientName.addEventListener('input', updateAndSave);
+
+    btnAddItem.addEventListener('click', () => {
+      // Append a fresh, empty item row to container
+      const newRow = createRowElement('', 1, 0);
+      itemsTbody.appendChild(newRow);
+      
+      // Auto-focus the descriptive name input of the added row
+      newRow.querySelector('.item-input-name').focus();
+      
+      updateAndSave();
+    });
+
+    btnClearAll.addEventListener('click', () => {
+      if (confirm("Are you sure you want to clear all inputs and localStorage? This action cannot be undone.")) {
+        clearAll();
+      }
+    });
+
+    btnGeneratePdf.addEventListener('click', generatePDF);
+
+    // Bootstrap app on start
+    window.addEventListener('load', loadState);
+  </script>
+
+</body>
+</html>
